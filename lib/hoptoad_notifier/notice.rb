@@ -310,9 +310,21 @@ module HoptoadNotifier
         if value.respond_to?(:to_hash)
           builder.var(:key => key){|b| xml_vars_for(b, value.to_hash) }
         else
-          builder.var(value.to_s, :key => key)
+          builder.var(xml_value_for(value), :key => key)
         end
       end
+    end
+
+    def xml_value_for(value)
+      if serializable?(value)
+        value.inspect
+      else
+        value.to_s
+      end
+    end
+
+    def serializable?(value)
+      value.nil? || value.is_a?(Array)
     end
 
     def rack_env(method)
