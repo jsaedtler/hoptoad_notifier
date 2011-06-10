@@ -429,11 +429,28 @@ class NoticeTest < Test::Unit::TestCase
       }
       notice = build_notice(attribute => hash)
       hash = notice.send(attribute)
-      assert_equal object.to_s, hash[:strange_object], "objects should be serialized"
+      assert_equal xml_value_for(object), hash[:strange_object], "objects should be serialized"
       assert_kind_of Hash, hash[:sub_hash], "subhashes should be kept"
-      assert_equal object.to_s, hash[:sub_hash][:sub_object], "subhash members should be serialized"
+      assert_equal xml_value_for(object), hash[:sub_hash][:sub_object], "subhash members should be serialized"
       assert_kind_of Array, hash[:array], "arrays should be kept"
-      assert_equal object.to_s, hash[:array].first, "array members should be serialized"
+      assert_equal xml_value_for(object), hash[:array].first, "array members should be serialized"
+    end
+  end
+
+  def xml_value_for(value)
+    if inspectable?(value)
+      value.inspect
+    else
+      value.to_s
+    end
+  end
+
+  def inspectable?(value)
+    case value
+    when Fixnum, Array, nil, IO
+      true
+    else
+      false
     end
   end
 

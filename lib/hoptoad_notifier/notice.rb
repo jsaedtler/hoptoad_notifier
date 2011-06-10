@@ -228,6 +228,8 @@ module HoptoadNotifier
     # See #clean_unserializable_data
     def clean_unserializable_data_from(attribute)
       self.send(:"#{attribute}=", clean_unserializable_data(send(attribute)))
+      p attribute
+      p self.send(attribute)
     end
 
     # Removes non-serializable data. Allowed data types are strings, arrays,
@@ -245,7 +247,24 @@ module HoptoadNotifier
           clean_unserializable_data(value, stack + [data.object_id])
         end
       else
-        data.to_s
+        xml_value_for(data)
+      end
+    end
+
+    def xml_value_for(value)
+      if inspectable?(value)
+        value.inspect
+      else
+        value.to_s
+      end
+    end
+
+    def inspectable?(value)
+      case value
+      when Fixnum, Array, nil, IO
+        true
+      else
+        false
       end
     end
 
@@ -309,22 +328,12 @@ module HoptoadNotifier
       hash.each do |key, value|
         if value.respond_to?(:to_hash)
           builder.var(:key => key){|b| xml_vars_for(b, value.to_hash) }
+        elsif value.respond_to?(:to_ary)
+          builder.var(value.inspect, :key => key)
         else
-          builder.var(xml_value_for(value), :key => key)
+          builder.var(value, :key => key)
         end
       end
-    end
-
-    def xml_value_for(value)
-      if serializable?(value)
-        value.inspect
-      else
-        value.to_s
-      end
-    end
-
-    def serializable?(value)
-      value.nil? || value.is_a?(Array)
     end
 
     def rack_env(method)
