@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'rubygems'
+require 'pp'
 
 $LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), "..", "lib"))
 
@@ -172,7 +173,7 @@ class Test::Unit::TestCase
 
   def assert_valid_node(document, xpath, content)
     nodes = document.xpath(xpath)
-    assert nodes.any?{|node| node.content == content },
+    assert nodes.any?{|node| node.content == content || node.content =~ Regexp.new(content.to_s) },
            "Expected xpath #{xpath} to have content #{content}, " +
            "but found #{nodes.map { |n| n.content }} in #{nodes.size} matching nodes.\n" +
            "Document:\n#{document.to_s}"

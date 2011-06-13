@@ -155,12 +155,6 @@ class NoticeTest < Test::Unit::TestCase
     assert_array_starts_with backtrace.lines, notice.backtrace.lines
   end
 
-  should "convert unserializable objects to strings" do
-    assert_serializes_hash(:parameters)
-    assert_serializes_hash(:cgi_data)
-    assert_serializes_hash(:session_data)
-  end
-
   should "filter parameters" do
     assert_filters_hash(:parameters)
   end
@@ -416,42 +410,6 @@ class NoticeTest < Test::Unit::TestCase
     assert_equal notice_from_hash.send(attribute),
                  value,
                  "#{attribute} was not correctly set from a hash"
-  end
-
-  def assert_serializes_hash(attribute)
-    [File.open(__FILE__), Proc.new { puts "boo!" }, Module.new].each do |object|
-      hash = {
-        :strange_object => object,
-        :sub_hash => {
-          :sub_object => object
-        },
-        :array => [object]
-      }
-      notice = build_notice(attribute => hash)
-      hash = notice.send(attribute)
-      assert_equal xml_value_for(object), hash[:strange_object], "objects should be serialized"
-      assert_kind_of Hash, hash[:sub_hash], "subhashes should be kept"
-      assert_equal xml_value_for(object), hash[:sub_hash][:sub_object], "subhash members should be serialized"
-      assert_kind_of Array, hash[:array], "arrays should be kept"
-      assert_equal xml_value_for(object), hash[:array].first, "array members should be serialized"
-    end
-  end
-
-  def xml_value_for(value)
-    if inspectable?(value)
-      value.inspect
-    else
-      value.to_s
-    end
-  end
-
-  def inspectable?(value)
-    case value
-    when Fixnum, Array, nil, IO
-      true
-    else
-      false
-    end
   end
 
   def assert_valid_notice_document(document)

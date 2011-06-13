@@ -41,11 +41,13 @@ Feature: Install the Gem in a Rails application
     Then the command should have run successfully
     When I configure the notifier to use the following configuration lines:
       """
-      config.api_key = "myapikey"
+      raise "sharks"
+      config.api_key = "OMG WHAAAAAAT"
       config.project_root = "argle/bargle"
       """
     And I define a response for "TestController#index":
       """
+      logger.info(HoptoadNotifier.configuration.project_root)
       session[:value] = "test"
       raise RuntimeError, "some message"
       """

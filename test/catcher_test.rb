@@ -31,23 +31,13 @@ class ActionControllerCatcherTest < Test::Unit::TestCase
       if value.respond_to?(:to_hash)
         assert_sent_hash value.to_hash, element_xpath
       else
-        assert_sent_element value, element_xpath
+        assert_sent_element HoptoadNotifier::XmlVarGenerator::Generic.serialize(value), element_xpath
       end
     end
   end
 
   def assert_sent_element(value, xpath)
-    assert_valid_node last_sent_notice_document, xpath, stringify_array_elements(value).to_s
-  end
-
-  def stringify_array_elements(data)
-    if data.respond_to?(:to_ary)
-      data.collect do |value|
-        stringify_array_elements(value)
-      end
-    else
-      data.to_s
-    end
+    assert_valid_node last_sent_notice_document, xpath, value
   end
 
   def assert_sent_request_info_for(request)

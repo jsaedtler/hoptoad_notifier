@@ -103,7 +103,7 @@ module HoptoadNotifier
 
       also_use_rack_params_filters
       find_session_data
-      clean_params
+      filter_params
       clean_rack_request_data
     end
 
@@ -140,18 +140,18 @@ module HoptoadNotifier
             request.component(controller)
             request.action(action)
             unless parameters.nil? || parameters.empty?
-              request.params do |params|
-                xml_vars_for(params, parameters)
+              request.params do |builder|
+                XmlVarGenerator.new(parameters).build(builder)
               end
             end
             unless session_data.nil? || session_data.empty?
-              request.session do |session|
-                xml_vars_for(session, session_data)
+              request.session do |builder|
+                XmlVarGenerator.new(session_data).build(builder)
               end
             end
             unless cgi_data.nil? || cgi_data.empty?
-              request.tag!("cgi-data") do |cgi_datum|
-                xml_vars_for(cgi_datum, cgi_data)
+              request.tag!("cgi-data") do |builder|
+                XmlVarGenerator.new(cgi_data).build(builder)
               end
             end
           end
@@ -224,61 +224,28 @@ module HoptoadNotifier
       end
     end
 
-    # Removes non-serializable data from the given attribute.
-    # See #clean_unserializable_data
-    def clean_unserializable_data_from(attribute)
-      self.send(:"#{attribute}=", clean_unserializable_data(send(attribute)))
-      p attribute
-      p self.send(attribute)
-    end
-
-    # Removes non-serializable data. Allowed data types are strings, arrays,
-    # and hashes. All other types are converted to strings.
-    # TODO: move this onto Hash
-    def clean_unserializable_data(data, stack = [])
+    # Detects if there are any infinite loops in the hash
+    def detect_loops(data, stack = [])
       return "[possible infinite recursion halted]" if stack.any?{|item| item == data.object_id }
-
       if data.respond_to?(:to_hash)
-        data.to_hash.inject({}) do |result, (key, value)|
-          result.merge(key => clean_unserializable_data(value, stack + [data.object_id]))
+        data.to_hash.each do |k,v|
+          data[k] = detect_loops(v, [data.object_id] + stack)
         end
-      elsif data.respond_to?(:to_ary)
-        data.collect do |value|
-          clean_unserializable_data(value, stack + [data.object_id])
-        end
-      else
-        xml_value_for(data)
       end
-    end
-
-    def xml_value_for(value)
-      if inspectable?(value)
-        value.inspect
-      else
-        value.to_s
-      end
-    end
-
-    def inspectable?(value)
-      case value
-      when Fixnum, Array, nil, IO
-        true
-      else
-        false
-      end
+      data
     end
 
     # Replaces the contents of params that match params_filters.
     # TODO: extract this to a different class
-    def clean_params
-      clean_unserializable_data_from(:parameters)
+    def filter_params
+      detect_loops(parameters)
       filter(parameters)
       if cgi_data
-        clean_unserializable_data_from(:cgi_data)
+        detect_loops(cgi_data)
         filter(cgi_data)
       end
       if session_data
-        clean_unserializable_data_from(:session_data)
+        detect_loops(session_data)
         filter(session_data)
       end
     end
@@ -291,7 +258,7 @@ module HoptoadNotifier
 
     def filter(hash)
       if params_filters
-        hash.each do |key, value|
+        hash.to_hash.each do |key, value|
           if filter_key?(key)
             hash[key] = "[FILTERED]"
           elsif value.respond_to?(:to_hash)
