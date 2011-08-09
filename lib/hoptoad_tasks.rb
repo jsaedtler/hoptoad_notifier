@@ -29,7 +29,9 @@ module HoptoadTasks
                              HoptoadNotifier.configuration.api_key}
     opts.each {|k,v| params["deploy[#{k}]"] = v }
 
-    url = URI.parse("http://#{HoptoadNotifier.configuration.host || 'hoptoadapp.com'}/deploys.txt")
+    host = HoptoadNotifier.configuration.host || 'hoptoadapp.com'
+    port = HoptoadNotifier.configuration.port || 80
+    url = URI.parse("http://#{host}:#{port}/deploys.txt")
 
     proxy = Net::HTTP.Proxy(HoptoadNotifier.configuration.proxy_host,
                             HoptoadNotifier.configuration.proxy_port,
