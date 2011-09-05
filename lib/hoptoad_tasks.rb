@@ -30,19 +30,20 @@ module HoptoadTasks
     opts.each {|k,v| params["deploy[#{k}]"] = v }
 
     host = HoptoadNotifier.configuration.host || 'hoptoadapp.com'
-    port = HoptoadNotifier.configuration.port || 80
-    url = URI.parse("http://#{host}:#{port}/deploys.txt")
+    port = HoptoadNotifier.configuration.port || (HoptoadNotifier.configuration.secure ? 443 : 80)
 
     proxy = Net::HTTP.Proxy(HoptoadNotifier.configuration.proxy_host,
                             HoptoadNotifier.configuration.proxy_port,
                             HoptoadNotifier.configuration.proxy_user,
                             HoptoadNotifier.configuration.proxy_pass)
+    http = proxy.new(host, port)
+    http.use_ssl = HoptoadNotifier.configuration.secure
 
     if dry_run
-      puts url, params.inspect
+      puts http.inspect, params.inspect
       return true
     else
-      response = proxy.post_form(url, params)
+      response = http.post("/deploys.txt", params)
 
       puts response.body
       return Net::HTTPSuccess === response
