@@ -39,11 +39,14 @@ module HoptoadTasks
     http = proxy.new(host, port)
     http.use_ssl = HoptoadNotifier.configuration.secure
 
+    post = Net::HTTP::Post.new("/deploys.txt")
+    post.set_form_data(params)
+
     if dry_run
       puts http.inspect, params.inspect
       return true
     else
-      response = http.post("/deploys.txt", params)
+      response = http.request(post)
 
       puts response.body
       return Net::HTTPSuccess === response
