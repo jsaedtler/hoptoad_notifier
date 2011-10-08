@@ -7,7 +7,8 @@ namespace :hoptoad do
                         :scm_repository => ENV['REPO'],
                         :local_username => ENV['USER'],
                         :api_key        => ENV['API_KEY'],
-                        :dry_run        => ENV['DRY_RUN'])
+                        :dry_run        => ENV['DRY_RUN'],
+                        :message        => ENV['MSG'])
   end
 
   task :log_stdout do
