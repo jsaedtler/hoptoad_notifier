@@ -38,6 +38,7 @@ module HoptoadTasks
                             HoptoadNotifier.configuration.proxy_pass)
     http = proxy.new(host, port)
     http.use_ssl = HoptoadNotifier.configuration.secure
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
     post = Net::HTTP::Post.new("/deploys.txt")
     post.set_form_data(params)
